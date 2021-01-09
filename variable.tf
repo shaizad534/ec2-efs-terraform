@@ -16,12 +16,12 @@ variable "instancetype" {
 
 variable "subnetid" {
   description = "Subnet ID to be used for Instance "
-  default     = "subnet-d291e59f"
+  default     = "subnet-4a98c707"
 }
 
 variable "vpcid" {
   description = "Vpc to be used for Instance "
-  default     = "vpc-4cbd4d31"
+  default     = "vpc-bb4c94c6"
 }
 
 
@@ -37,10 +37,10 @@ variable "Env" {
 
 variable "HostIp" {
   description = " Host IP to be allowed SSH for"
-  default     = "98.206.221.201/32"
+  default     = "34.228.57.151/32"
 }
 
 variable "PvtIp" {
   description = " subnet IP to be allowed SSH for"
-  default     = "172.31.16.0/20"
+  default     = "172.31.0.0/16"
 }

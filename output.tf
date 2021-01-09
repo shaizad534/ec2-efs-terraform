@@ -16,5 +16,5 @@ output "Efs_id" {
 
 output "private_key" {
   description = "Key of the ec2 instance "
-  value       = tls_private_key.tmp.private_key_pem
+  value       = tls_private_key.my_key.private_key_pem
 }

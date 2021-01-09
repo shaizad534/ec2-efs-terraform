@@ -6,6 +6,27 @@ provider "aws" {
   region = var.region
 }
 
+# SSH access and a key-pair to access the instance
+# Generate new private key
+
+resource "tls_private_key" "my_key" {
+  algorithm = "RSA"
+}
+
+# Generate a key-pair with above key
+
+resource "aws_key_pair" "deployer" {
+  key_name   = "my-efs-key"
+  public_key = tls_private_key.my_key.public_key_openssh
+}
+
+# Saving Key Pair for ssh login for Client if needed
+resource "null_resource" "save_key_pair" {
+  provisioner "local-exec" {
+    command = "echo ${tls_private_key.my_key.private_key_pem} > my-efs-key.pem"
+  }
+}
+
 # Creating EFS File system
 
 resource "aws_efs_file_system" "poc-efs" {
@@ -24,23 +45,12 @@ resource "aws_efs_mount_target" "mount" {
   security_groups = [aws_security_group.poc-server.id]
 }
 
-# SSH access and a key-pair to access the instance
-resource "tls_private_key" "tmp" {
-  algorithm = "RSA"
-}
-
-#resource "aws_key_pair" "user-ssh-key" {
-  key_name   = "my-efs-key"
-  public_key = tls_private_key.tmp.public_key_openssh
-}
-
-# EC2 resource
-
 resource "aws_instance" "poc-server" {
   ami                    = var.ami_id
   instance_type          = var.instancetype
-  key_name               = tls_private_key.tmp.public_key_openssh
+  key_name               = aws_key_pair.deployer.key_name
   subnet_id              = var.subnetid
+  depends_on             = [aws_efs_mount_target.mount]
   vpc_security_group_ids = [aws_security_group.poc-server.id]
 
   tags = {
@@ -70,7 +80,7 @@ resource "aws_instance" "poc-server" {
     host        = self.public_ip
     type        = "ssh"
     user        = "ec2-user"
-    private_key = tls_private_key.tmp.private_key_pem
+    private_key = tls_private_key.my_key.private_key_pem
   }
 }
 
@@ -112,3 +122,14 @@ resource "aws_security_group" "poc-server" {
     create_before_destroy = true
   }
 }
+
+# Backend for terraform statestore
+
+terraform {
+  backend "s3" {
+    bucket = "state-tf-backend"
+    key    = "efs-ec2-tf/terraform.tfstate"
+    region = "us-east-1"
+  }
+}
+
